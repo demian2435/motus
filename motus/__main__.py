@@ -113,7 +113,6 @@ def _build_stack_with_retry(
     logger: logging.Logger,
 ) -> tuple[list, list, list]:
     """Try building the stack; if a plugin is missing, re-import and retry once."""
-
     try:
         return build_stack_from_rules(rules)
     except RuntimeError as exc:
@@ -149,7 +148,7 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
     # Instantiate and start all ingestors; track them by plugin name
     ingestors: dict[str, asyncio.Task] = {}
 
-    async def _start_ingestor(ing_cls, params) -> None:
+    async def _start_ingestor(ing_cls: type, params: dict) -> None:
         instance = ing_cls(
             lambda event: asyncio.create_task(engine.handle_event(event)),
             **params,
@@ -168,15 +167,14 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
 
     async def _reload_stack(updated_rules: list[dict]) -> None:
         """Reload plugins and rebuild adapters/ingestors when rules change."""
-
         try:
             ing_defs, new_adapters, _ = _build_stack_with_retry(
                 updated_rules,
                 plugins_root,
                 logger,
             )
-        except RuntimeError as exc:  # pragma: no cover - defensive logging
-            logger.exception("Reload failed: %s", exc)
+        except RuntimeError:  # pragma: no cover - defensive logging
+            logger.exception("Reload failed during stack rebuild")
             return
 
         engine.adapters = new_adapters
@@ -193,7 +191,14 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
 
     tasks = list(ingestors.values())
     watcher = logging.getLogger("motus.rules_watcher")
-    tasks.append(watch_rules_folder(rules_folder, engine, logger=watcher, on_change=_reload_stack))
+    tasks.append(
+        watch_rules_folder(
+            rules_folder,
+            engine,
+            logger=watcher,
+            on_change=_reload_stack,
+        ),
+    )
     await asyncio.gather(*tasks)
 
 
