@@ -104,8 +104,19 @@ class DecisionEngine:
 
     async def trigger_actions(self, rule: dict, event: dict) -> None:
         """Dispatch matching actions to the configured adapters."""
-        then = rule.get("then", {})
-        actions = then if isinstance(then, list) else [then]
+        then = rule.get("then")
+        if not isinstance(then, list):
+            msg = "Rule '{}' must define 'then' as a list of actions".format(
+                rule.get(
+                    "name",
+                    "<unnamed>",
+                ),
+            )
+            raise TypeError(msg)
+        actions = then
+        if not actions:
+            self.logger.warning("Rule '%s' has no actions", rule.get("name"))
+            return
         for action in actions:
             target = action.get("target")
             for adapter in self.adapters:

@@ -14,6 +14,37 @@ from motus.registry import ADAPTER_REGISTRY, INGESTOR_REGISTRY
 from motus.utils import load_rules_from_folder, watch_rules_folder
 
 
+def _collect_plugin_requirements(rules: list[dict]) -> tuple[dict, dict]:
+    """Return required ingestor and adapter definitions from rules."""
+    ingestor_types: dict[str, dict] = {}
+    adapter_types: dict[str, dict] = {}
+
+    for rule in rules:
+        input_info = rule.get("input")
+        if input_info:
+            ing_type = input_info.get("type")
+            params = input_info.get("params", {})
+            if ing_type and ing_type not in ingestor_types:
+                ingestor_types[ing_type] = params
+
+        then = rule.get("then")
+        if not isinstance(then, list):
+            msg = "Rule '{}' must define 'then' as a list of actions".format(
+                rule.get(
+                    "name",
+                    "<unnamed>",
+                ),
+            )
+            raise TypeError(msg)
+
+        for action in then:
+            target = action.get("target")
+            if target and target not in adapter_types:
+                adapter_types[target] = action.get("params", {})
+
+    return ingestor_types, adapter_types
+
+
 def _load_plugins_from(
     root: str,
     package_prefix: str | None = None,
@@ -70,23 +101,7 @@ def build_stack_from_rules(rules: list[dict]) -> tuple[list, list, list]:
 
     Returns (ingestors, adapters, rules).
     """
-    ingestor_types = {}
-    adapter_types = {}
-    for rule in rules:
-        # Input plugin
-        input_info = rule.get("input")
-        if input_info:
-            ing_type = input_info.get("type")
-            params = input_info.get("params", {})
-            if ing_type and ing_type not in ingestor_types:
-                ingestor_types[ing_type] = params
-        # Output plugin(s)
-        then = rule.get("then", {})
-        actions = then if isinstance(then, list) else [then]
-        for action in actions:
-            target = action.get("target")
-            if target and target not in adapter_types:
-                adapter_types[target] = action.get("params", {})
+    ingestor_types, adapter_types = _collect_plugin_requirements(rules)
     # Instantiate ingestors
     ingestors = []
     for ing_type, params in ingestor_types.items():

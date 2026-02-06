@@ -57,7 +57,7 @@ You should see logs showing the matched rule and the triggered actions (e.g., `d
 
 - **Ingest**: An ingestor (e.g., webhook) normalizes incoming payloads into a standard event shape.
 - **Decide**: The `DecisionEngine` evaluates each rule (`when` supports nested AND/OR and numeric comparators). On match it records the decision via SQLite persistence.
-- **Act**: Matching actions are dispatched to adapters; only the adapter whose name matches `then.target` runs.
+- **Act**: Matching actions are dispatched to adapters; each action entry in `then` targets a specific adapter.
 - **Observe**: Prometheus counters (`motus_actions_total`, `motus_events_received`, etc.) are available; logging is colorized for quick scanning.
 - **Reload**: A lightweight watcher keeps the in-memory rules list in sync with the rules directory without restarting the process.
 
@@ -70,7 +70,7 @@ Bundled plugins:
 ## Writing Rules
 
 - Place YAML files under the folder passed to `--rules-folder` (e.g., `examples/rules`).
-- A rule contains `name`, optional `input`, mandatory `when`, and `then` (single dict or list of actions).
+- A rule contains `name`, optional `input`, mandatory `when`, and `then` (a list of actions).
 - Nested fields use dot notation (e.g., `metadata.size_gb`). Comparisons accept `>`, `<`, `>=`, `<=` prefixes on string values.
 - Multiple actions are supported by providing a list under `then`.
 
@@ -122,12 +122,12 @@ class MyNotifier(OutputAdapter):
 				self.logger.info("Notification sent to %s for event %s", target_url, event)
 ```
 
-Then reference it from a rule:
+Then reference it from a rule (note: `then` is always a list):
 
 ```yaml
 then:
-	target: my_notifier
-	url: "https://hooks.example.com/motus"
+	- target: my_notifier
+	  url: "https://hooks.example.com/motus"
 ```
 
 ### Custom ingestor

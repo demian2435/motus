@@ -42,7 +42,7 @@ def _rules_snapshot(folder: Path) -> list[tuple[str, str]]:
                 data = rule_file.read_bytes()
             except FileNotFoundError:
                 continue
-            checksum = hashlib.md5(data).hexdigest()
+            checksum = hashlib.md5(data, usedforsecurity=False).hexdigest()
             snapshot.append((rule_file.name, checksum))
     snapshot.sort()
     return snapshot

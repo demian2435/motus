@@ -25,7 +25,7 @@ async def test_decision_engine_triggers_action() -> None:
     rule = {
         "name": "test",
         "when": {"type": "test"},
-        "then": {"target": "dummy"},
+        "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
     engine = DecisionEngine([rule], [adapter])
@@ -44,7 +44,7 @@ async def test_decision_engine_and_or_and_nested_paths() -> None:
                 {"and": [{"type": "beta"}, {"metadata.level": "pro"}]},
             ],
         },
-        "then": {"target": "dummy"},
+        "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
     engine = DecisionEngine([rule], [adapter])
@@ -76,7 +76,7 @@ async def test_decision_engine_numeric_comparisons_and_non_match() -> None:
                 {"value": "<10"},
             ],
         },
-        "then": {"target": "dummy"},
+        "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
     engine = DecisionEngine([rule], [adapter])
@@ -100,7 +100,7 @@ async def test_decision_engine_ignores_malformed_when() -> None:
     rule = {
         "name": "malformed",
         "when": "not-a-dict",
-        "then": {"target": "dummy"},
+        "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
     engine = DecisionEngine([rule], [adapter])

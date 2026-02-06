@@ -27,7 +27,7 @@ name: r1
 when:
   type: foo
 then:
-  target: dummy
+    - target: dummy
 """,
     )
     f2.write_text(
@@ -37,7 +37,7 @@ name: r2
 when:
   type: bar
 then:
-  target: dummy
+    - target: dummy
 """,
     )
     rules = load_rules_from_folder(str(tmp_path))
@@ -53,7 +53,7 @@ def test_build_stack_from_rules_requires_plugins() -> None:
             "name": "with-ingestor",
             "input": {"type": "webhook", "params": {}},
             "when": {"type": "demo"},
-            "then": {"target": "dummy"},
+            "then": [{"target": "dummy"}],
         },
     ]
     ingestors, adapters, _ = __main__.build_stack_from_rules(rules)
@@ -68,7 +68,7 @@ def test_build_stack_from_rules_missing_adapter_raises() -> None:
         {
             "name": "bad",
             "when": {"type": "demo"},
-            "then": {"target": "nonexistent"},
+            "then": [{"target": "nonexistent"}],
         },
     ]
     with pytest.raises(RuntimeError):

@@ -15,7 +15,7 @@ async def test_integration_event_to_action(
     rule = {
         "name": "integration",
         "when": {"type": "integration"},
-        "then": {"target": "dummy"},
+        "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
     engine = DecisionEngine([rule], [adapter])
