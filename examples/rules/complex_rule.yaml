@@ -7,11 +7,11 @@ input:
 when:
   or:
     - and:
-        - type: data.arrival
-        - metadata.size_gb: ">=100"
+      - type: data.arrival
+      - metadata.size_gb: ">=100"
     - and:
-        - type: data.arrival
-        - metadata.priority: "high"
+      - type: data.arrival
+      - metadata.priority: "high"
 then:
   - target: dummy
     params:

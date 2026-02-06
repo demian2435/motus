@@ -1,3 +1,4 @@
+# Example of a simple rule
 name: big-data-pipeline
 input:
   type: webhook
