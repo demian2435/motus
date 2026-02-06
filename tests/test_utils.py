@@ -52,7 +52,7 @@ def test_build_stack_from_rules_requires_plugins() -> None:
         {
             "name": "with-ingestor",
             "input": {"type": "webhook", "params": {}},
-            "when": {"type": "demo"},
+            "when": [{"type": "demo"}],
             "then": [{"target": "dummy"}],
         },
     ]
@@ -67,7 +67,7 @@ def test_build_stack_from_rules_missing_adapter_raises() -> None:
     rules = [
         {
             "name": "bad",
-            "when": {"type": "demo"},
+            "when": [{"type": "demo"}],
             "then": [{"target": "nonexistent"}],
         },
     ]

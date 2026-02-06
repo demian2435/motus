@@ -70,7 +70,7 @@ Bundled plugins:
 ## Writing Rules
 
 - Place YAML files under the folder passed to `--rules-folder` (e.g., `examples/rules`).
-- A rule contains `name`, optional `input`, mandatory `when`, and `then` (a list of actions).
+- A rule contains `name`, optional `input`, mandatory `when`, and `then` (both are lists: `when` entries are evaluated, `then` actions are executed).
 - Nested fields use dot notation (e.g., `metadata.size_gb`). Comparisons accept `>`, `<`, `>=`, `<=` prefixes on string values.
 - Multiple actions are supported by providing a list under `then`.
 
@@ -83,7 +83,7 @@ input:
 	params:
 		port: 8080
 when:
-	or:
+	- or:
 		- and:
 			- type: data.arrival
 			- metadata.size_gb: ">=100"

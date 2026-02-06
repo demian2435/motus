@@ -24,7 +24,7 @@ async def test_decision_engine_triggers_action() -> None:
     """Trigger matching rule executes adapter."""
     rule = {
         "name": "test",
-        "when": {"type": "test"},
+        "when": [{"type": "test"}],
         "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
@@ -38,12 +38,14 @@ async def test_decision_engine_and_or_and_nested_paths() -> None:
     """Match both OR branches and ensure non-match scenario."""
     rule = {
         "name": "complex",
-        "when": {
-            "or": [
-                {"and": [{"type": "alpha"}, {"metadata.score": ">=10"}]},
-                {"and": [{"type": "beta"}, {"metadata.level": "pro"}]},
-            ],
-        },
+        "when": [
+            {
+                "or": [
+                    {"and": [{"type": "alpha"}, {"metadata.score": ">=10"}]},
+                    {"and": [{"type": "beta"}, {"metadata.level": "pro"}]},
+                ],
+            },
+        ],
         "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
@@ -70,12 +72,14 @@ async def test_decision_engine_numeric_comparisons_and_non_match() -> None:
     """Validate numeric comparisons and non-match cases."""
     rule = {
         "name": "numeric",
-        "when": {
-            "and": [
-                {"value": ">=5"},
-                {"value": "<10"},
-            ],
-        },
+        "when": [
+            {
+                "and": [
+                    {"value": ">=5"},
+                    {"value": "<10"},
+                ],
+            },
+        ],
         "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()
@@ -99,7 +103,7 @@ async def test_decision_engine_ignores_malformed_when() -> None:
     """Ensure malformed rules are safely ignored."""
     rule = {
         "name": "malformed",
-        "when": "not-a-dict",
+        "when": ["not-a-dict"],
         "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()

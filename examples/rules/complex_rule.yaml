@@ -5,7 +5,7 @@ input:
   params:
     port: 8080
 when:
-  or:
+  - or:
     - and:
       - type: data.arrival
       - metadata.size_gb: ">=100"

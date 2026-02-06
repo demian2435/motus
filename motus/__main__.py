@@ -45,6 +45,37 @@ def _collect_plugin_requirements(rules: list[dict]) -> tuple[dict, dict]:
     return ingestor_types, adapter_types
 
 
+def _normalize_rules(rules: list[dict]) -> list[dict]:
+    """Normalize rule fields: enforce list for 'when' and 'then'."""
+    normalized: list[dict] = []
+    for rule in rules:
+        rule_copy = dict(rule)
+
+        when = rule_copy.get("when")
+        if not isinstance(when, list):
+            msg = "Rule '{}' must define 'when' as a list or dict".format(
+                rule_copy.get(
+                    "name",
+                    "<unnamed>",
+                ),
+            )
+            raise TypeError(msg)
+
+        then = rule_copy.get("then")
+        if not isinstance(then, list):
+            msg = "Rule '{}' must define 'then' as a list of actions".format(
+                rule_copy.get(
+                    "name",
+                    "<unnamed>",
+                ),
+            )
+            raise TypeError(msg)
+
+        normalized.append(rule_copy)
+
+    return normalized
+
+
 def _load_plugins_from(
     root: str,
     package_prefix: str | None = None,
@@ -145,7 +176,7 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
     import_all_plugins(plugins_root)
     extra = f" + custom from {plugins_root}" if plugins_root else ""
     logger.info("Plugins imported: bundled motus/plugins%s", extra)
-    rules = load_rules_from_folder(rules_folder)
+    rules = _normalize_rules(load_rules_from_folder(rules_folder))
     logger.info("Loaded %d rule(s) from folder '%s'", len(rules), rules_folder)
     persistence = Persistence()
     logger.info("Persistence initialized")
@@ -183,8 +214,9 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
     async def _reload_stack(updated_rules: list[dict]) -> None:
         """Reload plugins and rebuild adapters/ingestors when rules change."""
         try:
+            normalized_rules = _normalize_rules(updated_rules)
             ing_defs, new_adapters, _ = _build_stack_with_retry(
-                updated_rules,
+                normalized_rules,
                 plugins_root,
                 logger,
             )
@@ -193,6 +225,7 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
             return
 
         engine.adapters = new_adapters
+        engine.rules = normalized_rules
         for ing_cls, params in ing_defs:
             key = getattr(ing_cls, "plugin_name", ing_cls.__name__)
             if key not in ingestors or ingestors[key].done():

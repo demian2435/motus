@@ -5,8 +5,8 @@ input:
   params:
     port: 8080
 when:
-  type: data.arrival
-  metadata.size_gb: "<100"
+  - type: data.arrival
+    metadata.size_gb: "<100"
 then:
   - target: dummy
     params:
