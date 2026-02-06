@@ -48,66 +48,58 @@ class DecisionEngine:
                 return any(
                     self._evaluate_conditions(cond, event) for cond in conditions["or"]
                 )
-            # Flat dict: all AND
-            for key, value in conditions.items():
-                if "." in key:
-                    parts = key.split(".")
-                    val = event
-                    for part in parts:
-                        val = val.get(part, None)
-                        if val is None:
-                            return False
-                    if isinstance(value, str):
-                        matcher = re.match(r"^(>=|<=|>|<)(.+)$", value)
-                        if matcher:
-                            op, num = matcher.groups()
-                            try:
-                                val_f = float(val)
-                                num_f = float(num)
-                            except (TypeError, ValueError):
-                                return False
-                            if op == ">":
-                                if not val_f > num_f:
-                                    return False
-                            elif op == "<":
-                                if not val_f < num_f:
-                                    return False
-                            elif op == ">=":
-                                if not val_f >= num_f:
-                                    return False
-                            elif op == "<=" and not val_f <= num_f:
-                                return False
-                        elif val != value:
-                            return False
-                    elif val != value:
-                        return False
-                else:
-                    current = event.get(key)
-                    if isinstance(value, str):
-                        matcher = re.match(r"^(>=|<=|>|<)(.+)$", value)
-                        if matcher:
-                            op, num = matcher.groups()
-                            try:
-                                cur_f = float(current)
-                                num_f = float(num)
-                            except (TypeError, ValueError):
-                                return False
-                            if op == ">" and not cur_f > num_f:
-                                return False
-                            if op == "<" and not cur_f < num_f:
-                                return False
-                            if op == ">=" and not cur_f >= num_f:
-                                return False
-                            if op == "<=" and not cur_f <= num_f:
-                                return False
-                        elif current != value:
-                            return False
-                    elif current != value:
-                        return False
-            return True
+            return all(
+                self._match_condition(key, value, event)
+                for key, value in conditions.items()
+            )
+
         if isinstance(conditions, list):
-            # List: all AND
             return all(self._evaluate_conditions(cond, event) for cond in conditions)
+
+        return False
+
+    def _match_condition(self, key: str, expected: object, event: dict) -> bool:
+        """Evaluate a single key/value condition against an event."""
+        candidate = self._get_nested_value(event, key)
+        if candidate is None:
+            return False
+
+        if isinstance(expected, str):
+            numeric = re.match(r"^(>=|<=|>|<)(.+)$", expected)
+            if numeric:
+                op, raw_threshold = numeric.groups()
+                return self._compare_numeric(candidate, raw_threshold, op)
+            return candidate == expected
+
+        return candidate == expected
+
+    @staticmethod
+    def _get_nested_value(event: dict, dotted_key: str) -> object | None:
+        """Traverse dotted keys (e.g., metadata.size) within an event dict."""
+        current: object = event
+        for part in dotted_key.split("."):
+            if not isinstance(current, dict) or part not in current:
+                return None
+            current = current[part]
+        return current
+
+    @staticmethod
+    def _compare_numeric(candidate: object, threshold: str, op: str) -> bool:
+        """Compare numeric values using the provided operator."""
+        try:
+            current_val = float(candidate)
+            threshold_val = float(threshold)
+        except (TypeError, ValueError):
+            return False
+
+        if op == ">":
+            return current_val > threshold_val
+        if op == "<":
+            return current_val < threshold_val
+        if op == ">=":
+            return current_val >= threshold_val
+        if op == "<=":
+            return current_val <= threshold_val
         return False
 
     async def trigger_actions(self, rule: dict, event: dict) -> None:

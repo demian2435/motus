@@ -107,29 +107,13 @@ def build_stack_from_rules(rules: list[dict]) -> tuple[list, list, list]:
     return ingestors, adapters, rules
 
 
-async def main() -> None:
-    """CLI entrypoint to start Motus with the provided rules and plugins."""
-    parser = argparse.ArgumentParser(description="Motus Event-Driven Automation Engine")
-    parser.add_argument(
-        "--rules-folder",
-        type=str,
-        default=None,
-        help="Folder containing YAML rule files",
-    )
-    parser.add_argument(
-        "--plugins-root",
-        type=str,
-        default=None,
-        help="Optional custom root containing ingestors/ and adapters/",
-    )
-    args = parser.parse_args()
-
+async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
+    """Run Motus using the provided rules folder and plugin root."""
     setup_logging()
     logger = logging.getLogger("motus.main")
     logger.info("Motus is starting up...")
-    rules_folder = str(Path(args.rules_folder).resolve())
-    import_all_plugins(args.plugins_root)
-    extra = f" + custom from {args.plugins_root}" if args.plugins_root else ""
+    import_all_plugins(plugins_root)
+    extra = f" + custom from {plugins_root}" if plugins_root else ""
     logger.info("Plugins imported: bundled motus/plugins%s", extra)
     rules = load_rules_from_folder(rules_folder)
     logger.info("Loaded %d rule(s) from folder '%s'", len(rules), rules_folder)
@@ -162,5 +146,26 @@ async def main() -> None:
     await asyncio.gather(*tasks)
 
 
+def main() -> None:
+    """CLI entrypoint to start Motus with the provided rules and plugins."""
+    parser = argparse.ArgumentParser(description="Motus Event-Driven Automation Engine")
+    parser.add_argument(
+        "--rules-folder",
+        type=str,
+        default=None,
+        help="Folder containing YAML rule files",
+    )
+    parser.add_argument(
+        "--plugins-root",
+        type=str,
+        default=None,
+        help="Optional custom root containing ingestors/ and adapters/",
+    )
+    args = parser.parse_args()
+
+    rules_folder = str(Path(args.rules_folder).resolve())
+    asyncio.run(_run_engine(rules_folder, args.plugins_root))
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

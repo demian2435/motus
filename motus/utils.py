@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 from pathlib import Path
 
 import yaml
@@ -56,8 +57,9 @@ async def watch_rules_folder(
         log.warning("Rules watcher disabled: no folder specified")
         return
 
-    folder_path = Path(folder).resolve()
-    if not folder_path.is_dir():
+    folder_path = Path(folder)
+    exists = await asyncio.to_thread(os.path.isdir, folder_path)
+    if not exists:
         log.error("Rules folder not found: %s", folder_path)
         return
 
