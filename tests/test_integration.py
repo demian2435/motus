@@ -1,5 +1,3 @@
-# ruff: noqa: D100, D103
-
 import pytest
 
 from motus.core import DecisionEngine
@@ -16,5 +14,5 @@ async def test_integration_event_to_action() -> None:
     adapter = DummyAdapter()
     engine = DecisionEngine([rule], [adapter])
     await engine.handle_event({"type": "integration"})
-    # Verifica che DummyAdapter abbia loggato l'azione
-    # (qui si può estendere con mock/log capture)
+    # Verify that DummyAdapter logged the action
+    # (extend with mock/log capture if needed)

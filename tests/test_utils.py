@@ -1,5 +1,3 @@
-# ruff: noqa: D100,D103,ANN001,S101
-
 import pytest
 
 from motus import __main__

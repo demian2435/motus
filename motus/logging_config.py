@@ -1,4 +1,4 @@
-"""Configurazione logging Motus basata su colorist (senza fallback)."""
+"""Motus logging configuration powered by colorist."""
 
 import logging
 
@@ -32,7 +32,7 @@ class ColorFormatter(logging.Formatter):
         name_color = self.file_core if record.name.startswith("motus.") else self.file
         name = f"{name_color}{record.name}{self.reset}"
         message = f"{self.text}{record.getMessage()}{self.reset}"
-        return f"{asctime} {levelname} {name} {message}"
+        return f"{asctime} | {levelname} | {name} | {message}"
 
 
 def setup_logging() -> None:

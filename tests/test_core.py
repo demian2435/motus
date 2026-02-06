@@ -1,5 +1,3 @@
-# ruff: noqa: D100,D101,D102,D103,D107,ANN001,ARG002,S101
-
 import pytest
 
 from motus.core import DecisionEngine

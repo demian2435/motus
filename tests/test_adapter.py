@@ -1,6 +1,3 @@
-# ruff: noqa: S101
-"""Adapter unit tests."""
-
 from typing import Any
 
 import pytest

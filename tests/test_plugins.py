@@ -1,5 +1,3 @@
-# ruff: noqa: D100,D103,ANN001,S101
-
 from motus import __main__
 from motus.registry import ADAPTER_REGISTRY, INGESTOR_REGISTRY
 
