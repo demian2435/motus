@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "motus"
+version = "0.1.0"
+description = "Event-Driven Automation Engine"
+authors = ["Motus Team"]
+packages = [{ include = "motus" }]
+
+[tool.poetry.dependencies]
+python = ">=3.13"
+PyYAML = "*"
+prometheus-client = "*"
+aiohttp = "*"
+colorist = "*"
+ruff = "*"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-asyncio = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
