@@ -65,7 +65,7 @@ def import_all_plugins(custom_root: str | None = None) -> None:
         _load_plugins_from(custom_root, package_prefix=None, logger=log)
 
 
-def build_stack_from_rules(rules) -> tuple[list, list, list]:
+def build_stack_from_rules(rules: list[dict]) -> tuple[list, list, list]:
     """Build ingestors and adapters dynamically from rules.
 
     Returns (ingestors, adapters, rules).
@@ -98,7 +98,7 @@ def build_stack_from_rules(rules) -> tuple[list, list, list]:
         ingestors.append((ing_cls, params))
     # Instantiate adapters
     adapters = []
-    for ad_type, params in adapter_types.items():
+    for ad_type in adapter_types:
         ad_cls = ADAPTER_REGISTRY.get(ad_type)
         if not ad_cls:
             msg = f"Adapter plugin '{ad_type}' not found"
@@ -108,6 +108,7 @@ def build_stack_from_rules(rules) -> tuple[list, list, list]:
 
 
 async def main() -> None:
+    """CLI entrypoint to start Motus with the provided rules and plugins."""
     parser = argparse.ArgumentParser(description="Motus Event-Driven Automation Engine")
     parser.add_argument(
         "--rules-folder",
@@ -129,13 +130,16 @@ async def main() -> None:
     rules_folder = str(Path(args.rules_folder).resolve())
     import_all_plugins(args.plugins_root)
     extra = f" + custom from {args.plugins_root}" if args.plugins_root else ""
-    logger.info(f"Plugins imported: bundled motus/plugins{extra}")
+    logger.info("Plugins imported: bundled motus/plugins%s", extra)
     rules = load_rules_from_folder(rules_folder)
-    logger.info(f"Loaded {len(rules)} rule(s) from folder '{rules_folder}'")
+    logger.info("Loaded %d rule(s) from folder '%s'", len(rules), rules_folder)
     persistence = Persistence()
     logger.info("Persistence initialized")
     ingestor_defs, adapters, rules = build_stack_from_rules(rules)
-    logger.info(f"Adapters loaded: {[a.__class__.__name__ for a in adapters]}")
+    logger.info(
+        "Adapters loaded: %s",
+        [adapter.__class__.__name__ for adapter in adapters],
+    )
     engine = DecisionEngine(rules, adapters, persistence)
     logger.info("DecisionEngine ready")
     # Instantiate and start all ingestors
@@ -146,7 +150,11 @@ async def main() -> None:
             **params,
         )
         ingestors.append(ingestor)
-        logger.info(f"Ingestor started: {ing_cls.__name__} with params {params}")
+        logger.info(
+            "Ingestor started: %s with params %s",
+            ing_cls.__name__,
+            params,
+        )
 
     tasks = [ing.start() for ing in ingestors]
     watcher = logging.getLogger("motus.rules_watcher")

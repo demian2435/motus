@@ -1,3 +1,5 @@
+# ruff: noqa: D100, D101, D102, D103, S101
+
 from motus.ingestor import EventIngestor
 
 

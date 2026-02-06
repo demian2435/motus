@@ -6,7 +6,10 @@ from colorist import BgColor, Color
 
 
 class ColorFormatter(logging.Formatter):
+    """Colorized formatter for Motus logs."""
+
     def __init__(self) -> None:
+        """Configure level colors and reusable tokens."""
         super().__init__()
         self.reset = Color.OFF
         self.level_colors = {
@@ -21,7 +24,8 @@ class ColorFormatter(logging.Formatter):
         # Core modules highlighted with background for easy distinction
         self.file_core = f"{BgColor.CYAN}{Color.BLACK}"
 
-    def format(self, record) -> str:
+    def format(self, record: logging.LogRecord) -> str:
+        """Render a log record with ANSI colors."""
         lvl_color = self.level_colors.get(record.levelname, self.text)
         asctime = f"{self.text}{self.formatTime(record, self.datefmt)}{self.reset}"
         levelname = f"{lvl_color}{record.levelname}{self.reset}"
@@ -32,6 +36,7 @@ class ColorFormatter(logging.Formatter):
 
 
 def setup_logging() -> None:
+    """Configure global logging for Motus."""
     handler = logging.StreamHandler()
     handler.setFormatter(ColorFormatter())
     logging.basicConfig(level=logging.INFO, handlers=[handler])

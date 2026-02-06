@@ -1,1 +1,1 @@
-# Adapter plugins package
+"""Bundled adapter plugins for Motus."""

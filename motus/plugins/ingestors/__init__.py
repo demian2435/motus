@@ -1,1 +1,1 @@
-# Ingestor plugins package
+"""Bundled ingestor plugins for Motus."""

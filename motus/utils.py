@@ -2,47 +2,51 @@
 
 import asyncio
 import logging
-import os
+from pathlib import Path
 
 import yaml
 
-
-def load_rules_from_yaml(path: str) -> list[dict]:
-    with open(path) as f:
-        return list(yaml.safe_load_all(f))
+from motus.core import DecisionEngine
 
 
-def load_rules_from_folder(folder: str) -> list:
+def load_rules_from_yaml(path: str | Path) -> list[dict]:
+    """Load a YAML file and return all documents as a list of dicts."""
+    path_obj = Path(path)
+    with path_obj.open() as file:
+        return list(yaml.safe_load_all(file))
+
+
+def load_rules_from_folder(folder: str | Path) -> list:
     """Load all rules from all YAML files in a folder."""
-    folder_abs = os.path.abspath(folder)
-    if not os.path.isdir(folder_abs):
-        msg = f"Rules folder not found: {folder_abs}"
+    folder_path = Path(folder).resolve()
+    if not folder_path.is_dir():
+        msg = f"Rules folder not found: {folder_path}"
         raise FileNotFoundError(msg)
-    rules = []
-    for fname in os.listdir(folder_abs):
-        if fname.endswith((".yaml", ".yml")):
-            rules.extend(load_rules_from_yaml(os.path.join(folder_abs, fname)))
+
+    rules: list[dict] = []
+    for rule_file in folder_path.iterdir():
+        if rule_file.suffix in {".yaml", ".yml"}:
+            rules.extend(load_rules_from_yaml(rule_file))
     return rules
 
 
-def _rules_snapshot(folder: str) -> list:
+def _rules_snapshot(folder: Path) -> list[tuple[str, float, int]]:
     """Return a stable snapshot (name, mtime, size) for YAML files in a folder."""
-    snapshot = []
-    for fname in os.listdir(folder):
-        if fname.endswith((".yaml", ".yml")):
-            path = os.path.join(folder, fname)
+    snapshot: list[tuple[str, float, int]] = []
+    for rule_file in folder.iterdir():
+        if rule_file.suffix in {".yaml", ".yml"}:
             try:
-                stat = os.stat(path)
+                stat = rule_file.stat()
             except FileNotFoundError:
                 continue
-            snapshot.append((fname, stat.st_mtime, stat.st_size))
+            snapshot.append((rule_file.name, stat.st_mtime, stat.st_size))
     snapshot.sort()
     return snapshot
 
 
 async def watch_rules_folder(
-    folder: str,
-    engine,
+    folder: str | Path,
+    engine: DecisionEngine,
     interval: float = 2.0,
     logger: logging.Logger | None = None,
 ) -> None:
@@ -51,22 +55,23 @@ async def watch_rules_folder(
     if not folder:
         log.warning("Rules watcher disabled: no folder specified")
         return
-    folder_abs = os.path.abspath(folder)
-    if not os.path.isdir(folder_abs):
-        log.error("Rules folder not found: %s", folder_abs)
+
+    folder_path = Path(folder).resolve()
+    if not folder_path.is_dir():
+        log.error("Rules folder not found: %s", folder_path)
         return
 
-    last_snapshot = _rules_snapshot(folder_abs)
-    log.info("Rules watcher active on %s", folder_abs)
+    last_snapshot = _rules_snapshot(folder_path)
+    log.info("Rules watcher active on %s", folder_path)
 
     while True:
         await asyncio.sleep(interval)
-        snapshot = _rules_snapshot(folder_abs)
+        snapshot = _rules_snapshot(folder_path)
         if snapshot != last_snapshot:
             try:
-                rules = load_rules_from_folder(folder_abs)
+                rules = load_rules_from_folder(folder_path)
             except FileNotFoundError:
-                log.exception("Rules folder missing during watch: %s", folder_abs)
+                log.exception("Rules folder missing during watch: %s", folder_path)
                 last_snapshot = []
                 continue
             engine.rules = rules
@@ -74,5 +79,5 @@ async def watch_rules_folder(
             log.info(
                 "Rules reloaded (%d) after change in %s",
                 len(rules),
-                folder_abs,
+                folder_path,
             )
