@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import yaml
@@ -50,6 +51,7 @@ async def watch_rules_folder(
     engine: DecisionEngine,
     interval: float = 2.0,
     logger: logging.Logger | None = None,
+    on_change: Callable[[list[dict]], Awaitable[None]] | None = None,
 ) -> None:
     """Periodically watch a rules folder and reload rules on changes."""
     log = logger or logging.getLogger("motus.rules_watcher")
@@ -77,6 +79,8 @@ async def watch_rules_folder(
                 last_snapshot = []
                 continue
             engine.rules = rules
+            if on_change:
+                await on_change(rules)
             last_snapshot = snapshot
             log.info(
                 "Rules reloaded (%d) after change in %s",

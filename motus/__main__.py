@@ -107,6 +107,22 @@ def build_stack_from_rules(rules: list[dict]) -> tuple[list, list, list]:
     return ingestors, adapters, rules
 
 
+def _build_stack_with_retry(
+    rules: list[dict],
+    plugins_root: str | None,
+    logger: logging.Logger,
+) -> tuple[list, list, list]:
+    """Try building the stack; if a plugin is missing, re-import and retry once."""
+
+    try:
+        return build_stack_from_rules(rules)
+    except RuntimeError as exc:
+        missing = str(exc)
+        logger.warning("Missing plugin detected, attempting reload: %s", missing)
+        import_all_plugins(plugins_root)
+        return build_stack_from_rules(rules)
+
+
 async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
     """Run Motus using the provided rules folder and plugin root."""
     setup_logging()
@@ -119,30 +135,65 @@ async def _run_engine(rules_folder: str, plugins_root: str | None) -> None:
     logger.info("Loaded %d rule(s) from folder '%s'", len(rules), rules_folder)
     persistence = Persistence()
     logger.info("Persistence initialized")
-    ingestor_defs, adapters, rules = build_stack_from_rules(rules)
+    ingestor_defs, adapters, rules = _build_stack_with_retry(
+        rules,
+        plugins_root,
+        logger,
+    )
     logger.info(
         "Adapters loaded: %s",
         [adapter.__class__.__name__ for adapter in adapters],
     )
     engine = DecisionEngine(rules, adapters, persistence)
     logger.info("DecisionEngine ready")
-    # Instantiate and start all ingestors
-    ingestors = []
-    for ing_cls, params in ingestor_defs:
-        ingestor = ing_cls(
+    # Instantiate and start all ingestors; track them by plugin name
+    ingestors: dict[str, asyncio.Task] = {}
+
+    async def _start_ingestor(ing_cls, params) -> None:
+        instance = ing_cls(
             lambda event: asyncio.create_task(engine.handle_event(event)),
             **params,
         )
-        ingestors.append(ingestor)
+        task = asyncio.create_task(instance.start())
+        key = getattr(ing_cls, "plugin_name", ing_cls.__name__)
+        ingestors[key] = task
         logger.info(
             "Ingestor started: %s with params %s",
             ing_cls.__name__,
             params,
         )
 
-    tasks = [ing.start() for ing in ingestors]
+    for ing_cls, params in ingestor_defs:
+        await _start_ingestor(ing_cls, params)
+
+    async def _reload_stack(updated_rules: list[dict]) -> None:
+        """Reload plugins and rebuild adapters/ingestors when rules change."""
+
+        try:
+            ing_defs, new_adapters, _ = _build_stack_with_retry(
+                updated_rules,
+                plugins_root,
+                logger,
+            )
+        except RuntimeError as exc:  # pragma: no cover - defensive logging
+            logger.exception("Reload failed: %s", exc)
+            return
+
+        engine.adapters = new_adapters
+        for ing_cls, params in ing_defs:
+            key = getattr(ing_cls, "plugin_name", ing_cls.__name__)
+            if key not in ingestors or ingestors[key].done():
+                await _start_ingestor(ing_cls, params)
+        logger.info(
+            "Stack refreshed: %d rules, %d adapters, %d ingestors",
+            len(updated_rules),
+            len(new_adapters),
+            len(ingestors),
+        )
+
+    tasks = list(ingestors.values())
     watcher = logging.getLogger("motus.rules_watcher")
-    tasks.append(watch_rules_folder(rules_folder, engine, logger=watcher))
+    tasks.append(watch_rules_folder(rules_folder, engine, logger=watcher, on_change=_reload_stack))
     await asyncio.gather(*tasks)
 
 
