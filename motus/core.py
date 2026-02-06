@@ -35,12 +35,8 @@ class DecisionEngine:
     def evaluate_rule(self, rule: dict, event: dict) -> bool:
         """Return True if the event satisfies the rule conditions."""
         when = rule.get("when")
-        if isinstance(when, dict):
-            normalized_when = [when]
-        elif isinstance(when, list):
-            normalized_when = when
-        else:
-            msg = "Rule '{}' must define 'when' as a list or dict".format(
+        if not isinstance(when, list):
+            msg = "Rule '{}' must define 'when' as a list".format(
                 rule.get(
                     "name",
                     "<unnamed>",
@@ -48,7 +44,7 @@ class DecisionEngine:
             )
             raise TypeError(msg)
 
-        return all(self._evaluate_conditions(cond, event) for cond in normalized_when)
+        return all(self._evaluate_conditions(cond, event) for cond in when)
 
     def _evaluate_conditions(self, conditions: dict, event: dict) -> bool:
         """Recursive AND/OR logic with numeric comparison support."""

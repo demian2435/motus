@@ -14,7 +14,7 @@ async def test_integration_event_to_action(
     """End-to-end flow from event to adapter execution and logging."""
     rule = {
         "name": "integration",
-        "when": {"type": "integration"},
+        "when": [{"type": "integration"}],
         "then": [{"target": "dummy"}],
     }
     adapter = DummyAdapter()

@@ -46,14 +46,14 @@ def _collect_plugin_requirements(rules: list[dict]) -> tuple[dict, dict]:
 
 
 def _normalize_rules(rules: list[dict]) -> list[dict]:
-    """Normalize rule fields: enforce list for 'when' and 'then'."""
+    """Normalize rule fields: enforce lists for 'when' and 'then'."""
     normalized: list[dict] = []
     for rule in rules:
         rule_copy = dict(rule)
 
         when = rule_copy.get("when")
         if not isinstance(when, list):
-            msg = "Rule '{}' must define 'when' as a list or dict".format(
+            msg = "Rule '{}' must define 'when' as a list".format(
                 rule_copy.get(
                     "name",
                     "<unnamed>",
