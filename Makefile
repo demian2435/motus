@@ -20,10 +20,10 @@ _test:
 test: _test clean
 
 _format:
-	@python -m poetry run ruff format motus || true
+	@python -m poetry run ruff format motus tests
 
 _lint:
-	@python -m poetry run ruff check --select ALL motus --fix --unsafe-fixes || true
+	@python -m poetry run ruff check --select ALL motus tests --fix --unsafe-fixes --exit-zero
 
 lint: _format _lint clean
 

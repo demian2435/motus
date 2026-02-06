@@ -1,16 +1,23 @@
+# ruff: noqa: S101
+"""Tests for rule loading and stack building utilities."""
+
+from pathlib import Path
+
 import pytest
 
 from motus import __main__
 from motus.utils import load_rules_from_folder
 
 
-def test_load_rules_from_folder_raises_on_missing(tmp_path) -> None:
+def test_load_rules_from_folder_raises_on_missing(tmp_path: Path) -> None:
+    """Raising when rule folder is missing."""
     missing = tmp_path / "missing"
     with pytest.raises(FileNotFoundError):
         load_rules_from_folder(str(missing))
 
 
-def test_load_rules_from_folder_reads_all(tmp_path) -> None:
+def test_load_rules_from_folder_reads_all(tmp_path: Path) -> None:
+    """Read all YAML rule files in a folder."""
     f1 = tmp_path / "a.yaml"
     f2 = tmp_path / "b.yml"
     f1.write_text(
@@ -39,6 +46,7 @@ then:
 
 
 def test_build_stack_from_rules_requires_plugins() -> None:
+    """Ensure rules referencing existing plugins succeed."""
     __main__.import_all_plugins()
     rules = [
         {
@@ -54,6 +62,7 @@ def test_build_stack_from_rules_requires_plugins() -> None:
 
 
 def test_build_stack_from_rules_missing_adapter_raises() -> None:
+    """Raise when referenced adapter is not registered."""
     __main__.import_all_plugins()
     rules = [
         {

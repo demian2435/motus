@@ -1,15 +1,22 @@
+# ruff: noqa: S101
+"""Tests for plugin discovery and registration."""
+
+from pathlib import Path
+
 from motus import __main__
 from motus.registry import ADAPTER_REGISTRY, INGESTOR_REGISTRY
 
 
 def test_import_all_plugins_registers_defaults() -> None:
+    """Default plugin import should register built-ins."""
     __main__.import_all_plugins()
     assert "webhook" in INGESTOR_REGISTRY
     assert "dummy" in ADAPTER_REGISTRY
     assert "logger" in ADAPTER_REGISTRY
 
 
-def test_import_all_plugins_custom_root(tmp_path) -> None:
+def test_import_all_plugins_custom_root(tmp_path: Path) -> None:
+    """Plugins from a custom root should be registered."""
     # create a minimal custom adapter
     adapter_dir = tmp_path / "adapters"
     adapter_dir.mkdir(parents=True)

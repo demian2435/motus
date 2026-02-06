@@ -1,12 +1,19 @@
+# ruff: noqa: S101
+"""Tests for ingestors."""
+
 from motus.ingestor import EventIngestor
 
 
 class DummyIngestor(EventIngestor):
+    """Minimal ingestor used for normalization tests."""
+
     async def start(self) -> None:
-        pass
+        """No-op start implementation for tests."""
+        return
 
 
 def test_normalize_event() -> None:
+    """Ensure normalization preserves expected fields."""
     ing = DummyIngestor(lambda e: e)
     raw = {
         "type": "foo",

@@ -1,3 +1,6 @@
+# ruff: noqa: S101
+"""Tests for adapters."""
+
 from typing import Any
 
 import pytest
