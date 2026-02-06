@@ -2,7 +2,7 @@
 
 # Motus
 
-Motus is an event-driven automation engine written in Python. It ingests events from any source, evaluates declarative YAML rules, and triggers actions via pluggable adapters. The engine is modular, extensible, and ready for Docker/Kubernetes, serverless, or bare-metal deployments.
+Motus is a lightweight, code‑first event/rules engine for Python you can run entirely on‑prem. It ingests events, evaluates declarative YAML rules with AND/OR and numeric comparisons, and dispatches actions through pluggable adapters. The focus is on a small footprint, developer‑friendly workflows (rules as code, versionable, testable), and straightforward extensibility in Python—no heavy UI or SaaS dependencies. It’s designed for teams who want an auditable, self‑hosted decision layer that hot‑reloads rule files and stays easy to observe, extend, and ship in minimal containers.
 
 ---
 
