@@ -1,6 +1,7 @@
 """Utility helpers for Motus."""
 
 import asyncio
+import hashlib
 import logging
 import os
 from collections.abc import Awaitable, Callable
@@ -32,16 +33,17 @@ def load_rules_from_folder(folder: str | Path) -> list:
     return rules
 
 
-def _rules_snapshot(folder: Path) -> list[tuple[str, float, int]]:
-    """Return a stable snapshot (name, mtime, size) for YAML files in a folder."""
-    snapshot: list[tuple[str, float, int]] = []
+def _rules_snapshot(folder: Path) -> list[tuple[str, str]]:
+    """Return a stable snapshot (name, md5 checksum) for YAML files in a folder."""
+    snapshot: list[tuple[str, str]] = []
     for rule_file in folder.iterdir():
         if rule_file.suffix in {".yaml", ".yml"}:
             try:
-                stat = rule_file.stat()
+                data = rule_file.read_bytes()
             except FileNotFoundError:
                 continue
-            snapshot.append((rule_file.name, stat.st_mtime, stat.st_size))
+            checksum = hashlib.md5(data).hexdigest()
+            snapshot.append((rule_file.name, checksum))
     snapshot.sort()
     return snapshot
 
@@ -82,8 +84,3 @@ async def watch_rules_folder(
             if on_change:
                 await on_change(rules)
             last_snapshot = snapshot
-            log.info(
-                "Rules reloaded (%d) after change in %s",
-                len(rules),
-                folder_path,
-            )

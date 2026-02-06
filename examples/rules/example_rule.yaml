@@ -8,7 +8,7 @@ when:
   type: data.arrival
   metadata.size_gb: "<100"
 then:
-  target: dummy
-  params:
-    mode: batch
-    priority: low
+  - target: dummy
+    params:
+      mode: batch
+      priority: low
