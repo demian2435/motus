@@ -1,8 +1,6 @@
-
-
 # Motus
 
-Motus is a lightweight, code‑first event/rules engine for Python you can run entirely on‑prem. It ingests events, evaluates declarative YAML rules with AND/OR and numeric comparisons, and dispatches actions through pluggable adapters. The focus is on a small footprint, developer‑friendly workflows (rules as code, versionable, testable), and straightforward extensibility in Python—no heavy UI or SaaS dependencies. It’s designed for teams who want an auditable, self‑hosted decision layer that hot‑reloads rule files and stays easy to observe, extend, and ship in minimal containers.
+Motus is a lightweight, code‑first event/rules engine for Python you can run entirely on‑prem. It ingests events, evaluates declarative YAML rules with AND/OR and numeric comparisons, and dispatches actions through pluggable adapters. The focus is on a small footprint, developer‑friendly workflows (rules as code, versionable, testable), and straightforward extensibility in Python—no heavy UI or SaaS dependencies. It’s designed for teams who want an auditable, self‑hosted decision layer that hot-reloads rule files and stays easy to observe, extend, and ship in minimal containers.
 
 ---
 
@@ -18,6 +16,7 @@ Motus is a lightweight, code‑first event/rules engine for Python you can run e
 ## Installation
 
 ### Prerequisites
+
 - Python 3.13+
 - [Poetry](https://python-poetry.org/docs/#installation)
 
@@ -45,8 +44,8 @@ poetry run python -m motus --rules-folder examples/rules --custom-plugins exampl
 
 ```bash
 curl -X POST http://localhost:8080/event \
-	-H "Content-Type: application/json" \
-	-d '{"type": "data.arrival", "source": "test", "metadata": {"size_gb": 120}}'
+    -H "Content-Type: application/json" \
+    -d '{"type": "data.arrival", "source": "test", "metadata": {"size_gb": 120}}'
 ```
 
 You should see logs showing the matched rule and the triggered actions (e.g., `dummy`, `logger`, or `prometheus`). Rules in the folder are watched and reloaded automatically when files change.
@@ -62,6 +61,7 @@ You should see logs showing the matched rule and the triggered actions (e.g., `d
 - **Reload**: A lightweight watcher keeps the in-memory rules list in sync with the rules directory without restarting the process.
 
 Bundled plugins:
+
 - Ingestors: `webhook`
 - Adapters: `dummy`, `logger`, `http_post`, `email`
 
@@ -79,24 +79,24 @@ Example (multi-action):
 ```yaml
 name: multi-action-bigdata
 input:
-	type: webhook
-	params:
-		port: 8080
+    type: webhook
+    params:
+        port: 8080
 when:
-	- or:
-		- and:
-			- type: data.arrival
-			- metadata.size_gb: ">=100"
-		- and:
-			- type: data.arrival
-			- metadata.priority: "high"
+    - or:
+        - and:
+            - type: data.arrival
+            - metadata.size_gb: ">=100"
+        - and:
+            - type: data.arrival
+            - metadata.priority: "high"
 then:
-	- target: dummy
-		params:
-			mode: batch
-			priority: high
-	- target: logger
-		message: "Big data event processed!"
+    - target: dummy
+        params:
+            mode: batch
+            priority: high
+    - target: logger
+        message: "Big data event processed!"
 ```
 
 ---
@@ -106,6 +106,7 @@ then:
 Custom plugins live outside the codebase and are loaded with `--plugins-root <path>`. Under that root you can have `adapters/` and `ingestors/` packages (no special naming required beyond folder layout).
 
 ### Custom output adapter
+
 ```python
 # adapters/my_notifier.py
 from motus.adapter import OutputAdapter
@@ -113,24 +114,25 @@ from motus.registry import register_adapter
 
 @register_adapter("my_notifier")
 class MyNotifier(OutputAdapter):
-		async def execute(self, action, event):
-				target_url = action.get("url")
-				if not target_url:
-						self.logger.warning("No url provided")
-						return
-				# send the notification here
-				self.logger.info("Notification sent to %s for event %s", target_url, event)
+        async def execute(self, action, event):
+                target_url = action.get("url")
+                if not target_url:
+                        self.logger.warning("No url provided")
+                        return
+                # send the notification here
+                self.logger.info("Notification sent to %s for event %s", target_url, event)
 ```
 
 Then reference it from a rule (note: `then` is always a list):
 
 ```yaml
 then:
-	- target: my_notifier
-	  url: "https://hooks.example.com/motus"
+    - target: my_notifier
+      url: "https://hooks.example.com/motus"
 ```
 
 ### Custom ingestor
+
 ```python
 # ingestors/kafka_consumer.py
 from motus.ingestor import EventIngestor
@@ -138,14 +140,14 @@ from motus.registry import register_ingestor
 
 @register_ingestor("kafka")
 class KafkaIngestor(EventIngestor):
-		def __init__(self, callback, topic: str):
-				super().__init__(callback)
-				self.topic = topic
+        def __init__(self, callback, topic: str):
+                super().__init__(callback)
+                self.topic = topic
 
-		async def start(self):
-				while True:
-						event = await self._poll_message()  # implement your poll
-						self.callback(self.normalize_event(event))
+        async def start(self):
+                while True:
+                        event = await self._poll_message()  # implement your poll
+                        self.callback(self.normalize_event(event))
 ```
 
 Run Motus pointing to your plugin root (alongside bundled plugins):
